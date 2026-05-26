@@ -553,7 +553,12 @@ virtual_oss \
 music player ──► /dev/dsp.play ──► virtual_oss ──► /dev/dsp.loop ──► BruteFIR ──► /dev/dsp0
 ```
 
-Start virtual_oss with the real soundcard as the backend:
+Use the same `-f /dev/null` backend as the loopback-only setup.
+`virtual_oss` must **not** be given `/dev/dsp0` as its backend here —
+that would route audio directly to the DAC, bypassing BruteFIR, and
+would also conflict with BruteFIR's own open of `/dev/dsp0`.
+`virtual_oss` only provides the loopback; BruteFIR is the sole writer
+to the real hardware:
 
 ```sh
 virtual_oss \
@@ -561,7 +566,7 @@ virtual_oss \
   -C 2 -c 2 \
   -r 44100 \
   -b 32 \
-  -f /dev/dsp0 \
+  -f /dev/null \
   -d dsp.play \
   -l dsp.loop &
 ```
@@ -597,7 +602,7 @@ Add an entry to `/etc/rc.conf`:
 
 ```sh
 virtual_oss_enable="YES"
-virtual_oss_flags="-S -C 2 -c 2 -r 44100 -b 32 -f /dev/dsp0 -d dsp.play -l dsp.loop"
+virtual_oss_flags="-S -C 2 -c 2 -r 44100 -b 32 -f /dev/null -d dsp.play -l dsp.loop"
 ```
 
 Then enable and start the service:
@@ -628,6 +633,10 @@ appear alongside the real `/dev/dsp0`.
   `-b 16`). It is unrelated to BruteFIR's `float_bits` setting, which
   controls internal processing precision only. You can use `-b 32` /
   `S32_LE` even when `float_bits: 64`.
+- Because `virtual_oss` uses `-f /dev/null`, it never opens `/dev/dsp0`
+  and does not interfere with other applications accessing the real
+  soundcard. The service can safely run at boot and stay running when
+  BruteFIR is stopped; other players can still use `/dev/dsp0` directly.
 - If you use a JACK backend instead of OSS, `virtual_oss` is not needed:
   connect BruteFIR's JACK ports directly in `qjackctl` or via
   `jack_connect`.
