@@ -46,23 +46,27 @@ references them.
 
 ### CMake Options
 
-| Option          | Default | Description                                           |
-|-----------------|---------|-------------------------------------------------------|
-| `WITH_ALSA`     | `ON`    | Build the ALSA audio I/O module (`alsa.bfio`)         |
-| `WITH_PIPEWIRE` | `ON`    | Build the PipeWire audio I/O module (`pipewire.bfio`) |
-| `WITH_JACK`     | `ON`    | Build the JACK audio I/O module (`jack.bfio`)         |
-| `WITH_OSS`      | `ON`    | Build the OSS audio I/O module (`oss.bfio`)           |
-| `USE_GCC`       | `OFF`   | Use GCC instead of the system default (clang)         |
+Defaults are platform-specific. Override any option with
+`-DWITH_<NAME>=ON` or `OFF` on the `cmake` command line.
+
+| Option          | FreeBSD default | Linux default | Description                                           |
+|-----------------|-----------------|---------------|-------------------------------------------------------|
+| `WITH_ALSA`     | `OFF`           | `ON`          | Build the ALSA audio I/O module (`alsa.bfio`)         |
+| `WITH_PIPEWIRE` | `OFF`           | `ON`          | Build the PipeWire audio I/O module (`pipewire.bfio`) |
+| `WITH_JACK`     | `OFF`           | `ON`          | Build the JACK audio I/O module (`jack.bfio`)         |
+| `WITH_OSS`      | `ON`            | `OFF`         | Build the OSS audio I/O module (`oss.bfio`)           |
+| `USE_GCC`       | `OFF`           | `OFF`         | Use GCC instead of the system default (clang)         |
 
 ### OSS-only build
 
-This is the recommended minimal build for FreeBSD: only `oss.bfio` is
-compiled, no ALSA, PipeWire, or JACK dependencies are needed.
+On FreeBSD, `cmake ..` builds OSS only by default — no extra flags
+needed. ALSA, PipeWire, and JACK are all `OFF` unless explicitly
+requested.
 
 ```sh
 cd /path/to/brutefir
 mkdir build_oss && cd build_oss
-cmake -DWITH_ALSA=OFF -DWITH_PIPEWIRE=OFF -DWITH_JACK=OFF ..
+cmake ..
 cmake --build . -j$(nproc)
 ```
 

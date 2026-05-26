@@ -17,11 +17,21 @@ project(BruteFIR VERSION 1.1.2 LANGUAGES C)
 
 # ---------------------------------------------------------------------------
 # Audio backend options
+# Defaults are platform-specific: on FreeBSD only OSS is on; on Linux
+# ALSA, PipeWire, and JACK are on and OSS is off.  Override with e.g.
+# -DWITH_ALSA=ON or -DWITH_OSS=OFF on the cmake command line.
 # ---------------------------------------------------------------------------
-option(WITH_ALSA      "Build ALSA audio I/O module"     ON)
-option(WITH_PIPEWIRE  "Build PipeWire audio I/O module" ON)
-option(WITH_JACK      "Build JACK audio I/O module"     ON)
-option(WITH_OSS       "Build OSS audio I/O module"      ON)
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    option(WITH_ALSA      "Build ALSA audio I/O module"     OFF)
+    option(WITH_PIPEWIRE  "Build PipeWire audio I/O module" OFF)
+    option(WITH_JACK      "Build JACK audio I/O module"     OFF)
+    option(WITH_OSS       "Build OSS audio I/O module"      ON)
+else()
+    option(WITH_ALSA      "Build ALSA audio I/O module"     ON)
+    option(WITH_PIPEWIRE  "Build PipeWire audio I/O module" ON)
+    option(WITH_JACK      "Build JACK audio I/O module"     ON)
+    option(WITH_OSS       "Build OSS audio I/O module"      OFF)
+endif()
 
 # ---------------------------------------------------------------------------
 # Language standard
