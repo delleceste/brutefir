@@ -10,12 +10,21 @@ the reasoning behind each one, and how to build on FreeBSD 15.
 
 ## Prerequisites
 
-Install the following packages before building:
+### Full build (all I/O modules)
 
 ```sh
 pkg install cmake flex fftw3 pipewire alsa-lib
 # Optional: pkg install jack
 ```
+
+### OSS-only build
+
+```sh
+pkg install cmake flex fftw3
+```
+
+`pipewire`, `alsa-lib`, and `jack` are not required when building with
+OSS only.
 
 `cmake` is the build system used on FreeBSD (the legacy `Makefile` is retained
 for Linux). `flex` is required to generate the configuration file parser.
@@ -45,11 +54,38 @@ references them.
 | `WITH_OSS`      | `ON`    | Build the OSS audio I/O module (`oss.bfio`)           |
 | `USE_GCC`       | `OFF`   | Use GCC instead of the system default (clang)         |
 
-Example — build with OSS only, using GCC:
+### OSS-only build
+
+This is the recommended minimal build for FreeBSD: only `oss.bfio` is
+compiled, no ALSA, PipeWire, or JACK dependencies are needed.
 
 ```sh
-cmake -DWITH_ALSA=OFF -DWITH_PIPEWIRE=OFF -DWITH_JACK=OFF -DUSE_GCC=ON ..
+cd /path/to/brutefir
+mkdir build_oss && cd build_oss
+cmake -DWITH_ALSA=OFF -DWITH_PIPEWIRE=OFF -DWITH_JACK=OFF ..
+cmake --build . -j$(nproc)
 ```
+
+What gets produced in `build_oss/`:
+
+| File             | Purpose                              |
+|------------------|--------------------------------------|
+| `brutefir`       | Main binary                          |
+| `oss.bfio`       | OSS audio I/O plugin                 |
+| `cli.bflogic`    | Command-line control interface       |
+| `eq.bflogic`     | Runtime equaliser logic module       |
+| `leastsquares.bflogic` | Least-squares filter design   |
+
+Run directly from the build directory (plugins are looked up relative
+to the binary by default):
+
+```sh
+cd build_oss
+./brutefir ../freebsd/brutefir.conf
+```
+
+To add GCC instead of clang, append `-DUSE_GCC=ON` to the cmake
+configure line (see [GCC vs. Clang](#gcc-vs-clang) below).
 
 ### GCC vs. Clang
 
