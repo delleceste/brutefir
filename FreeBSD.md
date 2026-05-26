@@ -619,10 +619,15 @@ appear alongside the real `/dev/dsp0`.
 
 ### Notes
 
-- The sample rate and bit depth passed to `virtual_oss` must match
-  `sampling_rate` and the `S32_LE` format in `brutefir.conf`.
-- `virtual_oss` performs no resampling; configure your player and
-  BruteFIR to the same rate.
+- **`-r`** must match `sampling_rate` in `brutefir.conf`. If you run
+  BruteFIR at 192000 Hz, pass `-r 192000` to `virtual_oss`.
+  `virtual_oss` performs no resampling; your player must also be
+  configured to the same rate.
+- **`-b`** is the PCM wire format on the OSS device — it must match the
+  `sample:` field in `brutefir.conf` (`S32_LE` → `-b 32`, `S16_LE` →
+  `-b 16`). It is unrelated to BruteFIR's `float_bits` setting, which
+  controls internal processing precision only. You can use `-b 32` /
+  `S32_LE` even when `float_bits: 64`.
 - If you use a JACK backend instead of OSS, `virtual_oss` is not needed:
   connect BruteFIR's JACK ports directly in `qjackctl` or via
   `jack_connect`.
