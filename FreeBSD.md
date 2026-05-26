@@ -93,6 +93,64 @@ cd build_oss
 To add GCC instead of clang, append `-DUSE_GCC=ON` to the cmake
 configure line (see [GCC vs. Clang](#gcc-vs-clang) below).
 
+### Installing
+
+#### System-wide (`/usr/local`, requires root)
+
+```sh
+sudo cmake --install build_oss
+```
+
+Installs to:
+
+| Path | Contents |
+|------|----------|
+| `/usr/local/bin/brutefir` | Main binary |
+| `/usr/local/lib/brutefir/*.bfio` / `*.bflogic` | Plugins |
+| `/usr/local/etc/rc.d/brutefir_loopback` | Boot service script |
+| `/usr/local/share/brutefir/` | Sample `brutefir.conf` and `brutefir_defaults` |
+
+The installed `brutefir_defaults` has `modules_path` pre-set to
+`/usr/local/lib/brutefir` — no manual editing needed.
+
+#### Per-user (`~/.local`, no root required)
+
+```sh
+cmake --install build_oss --prefix ~/.local
+```
+
+Installs to:
+
+| Path | Contents |
+|------|----------|
+| `~/.local/bin/brutefir` | Main binary |
+| `~/.local/lib/brutefir/*.bfio` / `*.bflogic` | Plugins |
+| `~/.local/share/brutefir/` | Sample configs |
+
+`modules_path` in the installed `brutefir_defaults` is automatically
+set to `~/.local/lib/brutefir`.
+
+The rc.d service script is **not** installed for a per-user prefix
+(the system rc subsystem only scans `/usr/local/etc/rc.d`). See
+[Starting virtual_oss at boot](#starting-virtual_oss-at-boot) for the
+manual install path, or simply start `virtual_oss` from `~/.profile`
+before launching BruteFIR.
+
+**Benefits of a per-user install:**
+- No root needed to install, update, or remove.
+- The system package tree (`/usr/local`) stays clean.
+- Multiple versions can coexist: system-wide and per-user independently.
+- Config and filter files live entirely under your home directory.
+
+**One prerequisite regardless of install location:** your user must
+have access to `/dev/dsp*`. Add yourself to the `operator` group:
+
+```sh
+sudo pw groupmod operator -m $(whoami)
+```
+
+Log out and back in for the group change to take effect.
+
 ### GCC vs. Clang
 
 FreeBSD ships clang as its system compiler. The build defaults to clang.

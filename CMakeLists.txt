@@ -248,6 +248,9 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     include(GNUInstallDirs)
 
+    # Resolve the plugins directory used in brutefir_defaults
+    set(BRUTEFIR_MODULES_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/brutefir")
+
     # Binary
     install(TARGETS brutefir
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -278,15 +281,28 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir)
     endif()
 
-    # rc.d service script
-    install(PROGRAMS freebsd/rc.d/brutefir_loopback
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
+    # brutefir_defaults: substitute the real modules_path at configure time
+    configure_file(
+        freebsd/brutefir_defaults.in
+        ${CMAKE_CURRENT_BINARY_DIR}/brutefir_defaults
+        @ONLY
     )
+
+    # rc.d service script — only meaningful when installing system-wide
+    # (the rc subsystem looks in /usr/local/etc/rc.d, not under ~/.local).
+    # Skipped automatically for per-user installs; install manually if needed:
+    #   sudo install -m 555 freebsd/rc.d/brutefir_loopback /usr/local/etc/rc.d/
+    if(CMAKE_INSTALL_PREFIX STREQUAL "/usr/local" OR
+       CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+        install(PROGRAMS freebsd/rc.d/brutefir_loopback
+            DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
+        )
+    endif()
 
     # Sample configs
     install(FILES
             freebsd/brutefir.conf
-            freebsd/brutefir_defaults
+            ${CMAKE_CURRENT_BINARY_DIR}/brutefir_defaults
         DESTINATION ${CMAKE_INSTALL_DATADIR}/brutefir
     )
 endif()

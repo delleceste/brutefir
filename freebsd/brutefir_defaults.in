@@ -1,0 +1,20 @@
+## BruteFIR default settings — FreeBSD / OSS
+## Copy to ~/.brutefir_defaults  (or $XDG_CONFIG_HOME/BruteFIR/brutefir_defaults.conf)
+
+float_bits: 32;             # internal floating-point precision (32 or 64)
+sampling_rate: 192000;      # Hz — must match the OSS device rate AND the
+                            # sample rate the FIR filter files were designed at
+filter_length: 65536;       # FIR length in samples (power of 2)
+                            # 65536 / 192000 ≈ 0.34 s of filter; reduce to
+                            # 4096 or 8192 for low-latency testing
+overflow_warnings: true;    # print to stderr when clipping occurs
+show_progress: true;        # print block counter to stderr
+max_dither_table_size: 0;   # 0 = compute dither on-the-fly (saves RAM)
+allow_poll_mode: false;     # OSS uses blocking I/O, poll mode not needed
+monitor_rate: false;        # do not print sample-rate drift
+powersave: false;           # never pause (OSS has no silence detection)
+
+# Path where brutefir looks for .bfio and .bflogic plugin files.
+# Set to the directory that contains oss.bfio, cli.bflogic, eq.bflogic, etc.
+# Use an absolute path for daemon / rc.d use.
+modules_path: "@BRUTEFIR_MODULES_DIR@";
