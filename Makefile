@@ -2,9 +2,8 @@ SRCDIR := src
 BUILDDIR := build
 
 # Where to find libraries, and their includes
-LIBPATHS	= #-L/usr/local/lib
-INCLUDE		= #-I/usr/local/include -I/usr/include/pipewire-0.3
-INCLUDE		+= -I/usr/include/pipewire-0.3 -I/usr/include/spa-0.2
+LIBPATHS	= -L/usr/local/lib
+INCLUDE		= -I/usr/local/include
 INCLUDE 	+= -I$(SRCDIR)
 
 # Package maintaners: it's recommended to activate SINGLE_MOD_PATH to disallow loading modules
@@ -16,9 +15,15 @@ FFTW_LIB	= -lfftw3 -lfftw3f
 BRUTEFIR_VERSION = 1.1.2
 UNAME	= $(shell uname)
 UNAME_M = $(shell uname -m)
+
+# Audio library detection (via pkg-config)
+HAVE_ALSA     := $(shell pkg-config --exists alsa 2>/dev/null && echo yes)
+HAVE_JACK     := $(shell pkg-config --exists jack 2>/dev/null && echo yes)
+HAVE_PIPEWIRE := $(shell pkg-config --exists libpipewire-0.3 2>/dev/null && echo yes)
+
 FLEX	= flex
-LD	= gcc
-CC	= gcc
+LD	= clang
+CC	= clang
 CHMOD	= chmod
 GNUTAR	= tar
 CC_WARNINGS	= -Wall -Wpointer-arith -Wshadow \
@@ -27,12 +32,18 @@ CC_WARNINGS	= -Wall -Wpointer-arith -Wshadow \
 -Wdisabled-optimization
 CC_OPTIMISE	= -O2
 CC_STD          = -std=c99 -D_POSIX_C_SOURCE=200809L
+ifeq ($(UNAME),FreeBSD)
+CC_STD          += -D__BSD_VISIBLE=1 -D_XOPEN_SOURCE=700
+INCLUDE         += -I/usr/local/include/pipewire-0.3 -I/usr/local/include/spa-0.2
+else
+INCLUDE         += -I/usr/include/pipewire-0.3 -I/usr/include/spa-0.2
+endif
 CC_FLAGS	= $(DEFINE) $(CC_STD) $(CC_OPTIMISE) -g
 FPIC		= -fPIC
 LDSHARED	= -shared
 CHMOD_REMOVEX	= -x
 
-BRUTEFIR_LIBS	= $(FFTW_LIB) -lm
+BRUTEFIR_LIBS	= $(FFTW_LIB) -lm -lpthread
 BRUTEFIR_OBJS = \
     $(BUILDDIR)/brutefir.o \
     $(BUILDDIR)/fftw_convolver.o \
@@ -84,8 +95,21 @@ ifeq ($(UNAME_M),x86_64)
 BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
 CC_FLAGS	+= -msse
 endif
+ifeq ($(UNAME_M),amd64)
+BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
+CC_FLAGS	+= -msse
+endif
 
-TARGETS += $(BUILDDIR)/alsa.bfio $(BUILDDIR)/pipewire.bfio $(BUILDDIR)/jack.bfio $(BUILDDIR)/filecb.bfio
+TARGETS += $(BUILDDIR)/filecb.bfio
+ifeq ($(HAVE_ALSA),yes)
+TARGETS += $(BUILDDIR)/alsa.bfio
+endif
+ifeq ($(HAVE_PIPEWIRE),yes)
+TARGETS += $(BUILDDIR)/pipewire.bfio
+endif
+ifeq ($(HAVE_JACK),yes)
+TARGETS += $(BUILDDIR)/jack.bfio
+endif
 
 all: $(TARGETS)
 
