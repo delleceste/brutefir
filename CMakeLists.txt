@@ -243,6 +243,55 @@ else()
 endif()
 
 # ---------------------------------------------------------------------------
+# Install rules (FreeBSD, default prefix /usr/local)
+# ---------------------------------------------------------------------------
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    include(GNUInstallDirs)
+
+    # Binary
+    install(TARGETS brutefir
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+
+    # Plugins (.bfio and .bflogic) — always-built set
+    install(TARGETS
+            file_bfio
+            filecb_bfio
+            cli_bflogic
+            eq_bflogic
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir
+    )
+    if(WITH_OSS AND TARGET oss_bfio)
+        install(TARGETS oss_bfio
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir)
+    endif()
+    if(WITH_ALSA AND TARGET alsa_bfio)
+        install(TARGETS alsa_bfio
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir)
+    endif()
+    if(WITH_PIPEWIRE AND TARGET pipewire_bfio)
+        install(TARGETS pipewire_bfio
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir)
+    endif()
+    if(WITH_JACK AND TARGET jack_bfio)
+        install(TARGETS jack_bfio
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/brutefir)
+    endif()
+
+    # rc.d service script
+    install(PROGRAMS freebsd/rc.d/brutefir_loopback
+        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
+    )
+
+    # Sample configs
+    install(FILES
+            freebsd/brutefir.conf
+            freebsd/brutefir_defaults
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/brutefir
+    )
+endif()
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 message(STATUS "")

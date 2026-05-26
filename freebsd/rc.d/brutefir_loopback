@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# PROVIDE: brutefir_loopback
+# REQUIRE: DAEMON oss
+# KEYWORD: shutdown
+
+# Add the following lines to /etc/rc.conf to enable:
+#
+#   brutefir_loopback_enable="YES"
+#
+# Optional overrides (shown with defaults):
+#
+#   brutefir_loopback_channels="2"       # channels (applies to both devices)
+#   brutefir_loopback_rate="192000"      # sample rate in Hz
+#   brutefir_loopback_bits="32"          # PCM bit depth (8/16/24/32)
+#   brutefir_loopback_play="dsp.play"    # playback device name -> /dev/dsp.play
+#   brutefir_loopback_loop="dsp.loop"    # loopback device name -> /dev/dsp.loop
+#   brutefir_loopback_priority="8"       # real-time priority (0 = disabled)
+#
+# The rate and bits must match sampling_rate and the sample: format in
+# brutefir.conf respectively.  No resampling is performed.
+
+. /etc/rc.subr
+
+name="brutefir_loopback"
+rcvar="brutefir_loopback_enable"
+desc="BruteFIR virtual OSS loopback (virtual_oss -f /dev/null)"
+
+load_rc_config "${name}"
+
+: ${brutefir_loopback_enable:=NO}
+: ${brutefir_loopback_channels:=2}
+: ${brutefir_loopback_rate:=192000}
+: ${brutefir_loopback_bits:=32}
+: ${brutefir_loopback_play:=dsp.play}
+: ${brutefir_loopback_loop:=dsp.loop}
+: ${brutefir_loopback_priority:=8}
+
+pidfile="/var/run/${name}.pid"
+command="/usr/local/bin/virtual_oss"
+command_args="-B \
+    -D ${pidfile} \
+    -C ${brutefir_loopback_channels} \
+    -c ${brutefir_loopback_channels} \
+    -r ${brutefir_loopback_rate} \
+    -b ${brutefir_loopback_bits} \
+    -i ${brutefir_loopback_priority} \
+    -f /dev/null \
+    -a 0 -d ${brutefir_loopback_play} \
+    -a 0 -l ${brutefir_loopback_loop}"
+
+run_rc_command "$1"

@@ -686,18 +686,37 @@ Configure your music player (e.g. `mpd`, `ffplay`, `sox`) to output to
 
 ### Starting virtual_oss at boot
 
-Add an entry to `/etc/rc.conf`:
+A dedicated rc.d service script is provided at `freebsd/rc.d/brutefir_loopback`
+and installed by `cmake --install` to `/usr/local/etc/rc.d/`.
+
+Enable it in `/etc/rc.conf`:
 
 ```sh
-virtual_oss_enable="YES"
-virtual_oss_flags="-C 2 -c 2 -r 192000 -b 32 -f /dev/null -a 0 -d dsp.play -a 0 -l dsp.loop"
+brutefir_loopback_enable="YES"
 ```
 
-Then enable and start the service:
+All settings have sensible defaults. Override only what you need:
 
 ```sh
-service virtual_oss enable
-service virtual_oss start
+brutefir_loopback_rate="192000"   # must match brutefir sampling_rate
+brutefir_loopback_bits="32"       # must match sample: format (S32_LE -> 32)
+brutefir_loopback_channels="2"
+brutefir_loopback_play="dsp.play"
+brutefir_loopback_loop="dsp.loop"
+brutefir_loopback_priority="8"    # real-time priority; 0 to disable
+```
+
+Then enable and start:
+
+```sh
+service brutefir_loopback enable
+service brutefir_loopback start
+```
+
+To install the script manually without running `cmake --install`:
+
+```sh
+install -m 555 freebsd/rc.d/brutefir_loopback /usr/local/etc/rc.d/
 ```
 
 ### Checking available devices
