@@ -42,7 +42,8 @@ cmake --build . -j$(nproc)
 
 All `.bfio` and `.bflogic` plugin files are produced alongside the `brutefir`
 binary in the build directory. Copy them wherever your `brutefir.conf`
-references them.
+references them. See [Plugin reference](#plugin-reference) below for a
+description of each file.
 
 ### CMake Options
 
@@ -72,13 +73,14 @@ cmake --build . -j$(nproc)
 
 What gets produced in `build_oss/`:
 
-| File             | Purpose                              |
-|------------------|--------------------------------------|
-| `brutefir`       | Main binary                          |
-| `oss.bfio`       | OSS audio I/O plugin                 |
-| `cli.bflogic`    | Command-line control interface       |
-| `eq.bflogic`     | Runtime equaliser logic module       |
-| `leastsquares.bflogic` | Least-squares filter design   |
+| File          | Required? | Purpose                                        |
+|---------------|-----------|------------------------------------------------|
+| `brutefir`    | yes       | Main binary                                    |
+| `oss.bfio`    | yes       | OSS audio I/O — reads/writes `/dev/dsp*`       |
+| `file.bfio`   | no        | File audio I/O — useful for offline testing    |
+| `filecb.bfio` | no        | Non-blocking file/pipe I/O                     |
+| `cli.bflogic` | no        | Runtime control interface (TCP or serial port) |
+| `eq.bflogic`  | no        | Runtime parametric equaliser                   |
 
 Run directly from the build directory (plugins are looked up relative
 to the binary by default):
@@ -106,6 +108,39 @@ auto-vectorisation, so the generated machine code is equivalent.
 
 **Note:** changing `USE_GCC` after an initial configure requires deleting
 `CMakeCache.txt` and re-running `cmake`.
+
+### Plugin reference
+
+BruteFIR loads plugins at startup via `dlopen()`. It looks for them in
+the directory specified by `modules_path` in `brutefir_defaults` (or
+the path you pass to `brutefir` directly). Plugins not present are
+simply unavailable — BruteFIR will error only if a plugin listed in
+`brutefir.conf` cannot be found.
+
+#### `.bfio` — audio I/O modules
+
+These handle reading and writing audio samples to and from BruteFIR's
+processing pipeline.
+
+| File          | Required for OSS setup | Description |
+|---------------|------------------------|-------------|
+| `oss.bfio`    | **yes**                | Reads and writes raw PCM samples via the OSS kernel interface (`/dev/dsp*`). This is the native audio path on FreeBSD. |
+| `alsa.bfio`   | no                     | ALSA audio I/O (Linux). Not built in the default FreeBSD build. |
+| `pipewire.bfio` | no                   | PipeWire audio I/O. Not built in the default FreeBSD build. |
+| `jack.bfio`   | no                     | JACK audio I/O. Not built in the default FreeBSD build. |
+| `file.bfio`   | no                     | Reads input from and writes output to regular files on disk. Useful for offline testing: pipe a WAV through BruteFIR without any soundcard. Supports looping and both binary and text sample formats. |
+| `filecb.bfio` | no                     | Non-blocking variant of `file.bfio` that uses a callback model (`poll()`-based). Intended for use with pipes or FIFOs where the other end may not always be ready. |
+
+#### `.bflogic` — logic and control modules
+
+These run alongside the audio processing loop and provide runtime
+control or additional DSP. They are all optional; BruteFIR runs
+perfectly without them.
+
+| File          | Description |
+|---------------|-------------|
+| `cli.bflogic` | Command-line control interface. Listens on a TCP port or serial device and accepts text commands at runtime: change filter attenuation, swap coefficient sets, adjust delay, mute/unmute inputs and outputs, print peak levels, and more. Useful for scripting and for integrating BruteFIR into a larger system. |
+| `eq.bflogic`  | Runtime parametric equaliser. Uses FFTW to modify the frequency response of loaded filter coefficients on the fly — no restart needed. Supports up to 64 independent equalisers each with up to 128 bands. Communicated with via `cli.bflogic` or a dedicated socket. |
 
 ---
 
