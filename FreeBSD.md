@@ -520,6 +520,13 @@ daemon.
 pkg install virtual_oss
 ```
 
+`virtual_oss` requires the `cuse` kernel module. To load it
+automatically at boot, add to `/boot/loader.conf`:
+
+```
+cuse_load="YES"
+```
+
 ### Loopback-only setup (no real hardware involved)
 
 This creates `/dev/dsp.play` (playback) and `/dev/dsp.loop` (loopback
@@ -528,7 +535,6 @@ capture). Audio written to `/dev/dsp.play` is readable on
 
 ```sh
 virtual_oss \
-  -S \
   -C 2 -c 2 \
   -r 44100 \
   -b 32 \
@@ -539,11 +545,10 @@ virtual_oss \
 
 | Flag | Meaning |
 |------|---------|
-| `-S` | Do not daemonize (or omit to run in background) |
 | `-C 2 -c 2` | 2 output / 2 input channels |
 | `-r 44100` | Sample rate |
 | `-b 32` | Bit depth |
-| `-f /dev/null` | No real hardware — pure virtual device |
+| `-f /dev/null` | Backend device for both playback and recording. `/dev/null` is magic: pure virtual routing, no real hardware opened. Use `-P` / `-R` separately for asymmetric setups (e.g. playback-only Bluetooth). |
 | `-d dsp.play` | Create `/dev/dsp.play` (playback side) |
 | `-l dsp.loop` | Create `/dev/dsp.loop` (loopback capture side) |
 
@@ -553,16 +558,16 @@ virtual_oss \
 music player ──► /dev/dsp.play ──► virtual_oss ──► /dev/dsp.loop ──► BruteFIR ──► /dev/dsp0
 ```
 
-Use the same `-f /dev/null` backend as the loopback-only setup.
-`virtual_oss` must **not** be given `/dev/dsp0` as its backend here —
-that would route audio directly to the DAC, bypassing BruteFIR, and
-would also conflict with BruteFIR's own open of `/dev/dsp0`.
-`virtual_oss` only provides the loopback; BruteFIR is the sole writer
-to the real hardware:
+Use `-f /dev/null` so that `virtual_oss` only provides the virtual
+loopback and never opens `/dev/dsp0`. Passing a real device here (e.g.
+`-f /dev/dsp0`) would set that device as the playback *and* recording
+backend: audio would be routed directly to the DAC by `virtual_oss`,
+bypassing BruteFIR entirely, and would conflict with BruteFIR's own
+open of the same device. BruteFIR must be the sole writer to the real
+hardware:
 
 ```sh
 virtual_oss \
-  -S \
   -C 2 -c 2 \
   -r 44100 \
   -b 32 \
@@ -602,7 +607,7 @@ Add an entry to `/etc/rc.conf`:
 
 ```sh
 virtual_oss_enable="YES"
-virtual_oss_flags="-S -C 2 -c 2 -r 44100 -b 32 -f /dev/null -d dsp.play -l dsp.loop"
+virtual_oss_flags="-C 2 -c 2 -r 44100 -b 32 -f /dev/null -d dsp.play -l dsp.loop"
 ```
 
 Then enable and start the service:
@@ -626,8 +631,10 @@ appear alongside the real `/dev/dsp0`.
 
 - **`-r`** must match `sampling_rate` in `brutefir.conf`. If you run
   BruteFIR at 192000 Hz, pass `-r 192000` to `virtual_oss`.
-  `virtual_oss` performs no resampling; your player must also be
-  configured to the same rate.
+  The `-S` flag enables automatic rate resampling inside `virtual_oss`,
+  but it is omitted here intentionally: BruteFIR requires sample-exact
+  rates, so your player, `virtual_oss`, and BruteFIR must all be
+  configured to the same rate with no resampling in between.
 - **`-b`** is the PCM wire format on the OSS device — it must match the
   `sample:` field in `brutefir.conf` (`S32_LE` → `-b 32`, `S16_LE` →
   `-b 16`). It is unrelated to BruteFIR's `float_bits` setting, which
