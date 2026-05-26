@@ -470,25 +470,25 @@ after that it is never called again during audio streaming.
 
 ### Minimal configuration files
 
-Two files are provided in the repository root:
+Two files are provided under `freebsd/`:
 
-| File                | Purpose                                              |
-|---------------------|------------------------------------------------------|
-| `brutefir_defaults` | Global defaults (filter length, sample rate, paths)  |
-| `brutefir.conf`     | Stereo passthrough via OSS (`/dev/dsp0`)              |
+| File                          | Purpose                                              |
+|-------------------------------|------------------------------------------------------|
+| `freebsd/brutefir_defaults`   | Global defaults (filter length, sample rate, paths)  |
+| `freebsd/brutefir.conf`       | Stereo passthrough via OSS (`/dev/dsp0`)              |
 
 Copy `brutefir_defaults` to `~/.brutefir_defaults` (or
 `$XDG_CONFIG_HOME/BruteFIR/brutefir_defaults.conf`):
 
 ```sh
-cp brutefir_defaults ~/.brutefir_defaults
+cp freebsd/brutefir_defaults ~/.brutefir_defaults
 ```
 
 Run from the build directory:
 
 ```sh
 cd build_oss
-./brutefir ../brutefir.conf
+./brutefir ../freebsd/brutefir.conf
 ```
 
 The configuration uses identity (dirac pulse) filters, so the audio is
