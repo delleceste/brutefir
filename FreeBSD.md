@@ -277,7 +277,7 @@ io "output" {
     device:        "oss";
     device:        "/dev/dsp0";
     sample_format: S32_LE;
-    sample_rate:   44100;
+    sample_rate:   192000;
     channels:      2;
 };
 ```
@@ -543,7 +543,7 @@ capture). Audio written to `/dev/dsp.play` is readable on
 ```sh
 virtual_oss \
   -C 2 -c 2 \
-  -r 44100 \
+  -r 192000 \
   -b 32 \
   -f /dev/null \
   -a 0 -d dsp.play \
@@ -553,7 +553,7 @@ virtual_oss \
 | Flag | Meaning |
 |------|---------|
 | `-C 2 -c 2` | 2 output / 2 input channels |
-| `-r 44100` | Sample rate for subsequent device commands |
+| `-r 192000` | Sample rate for subsequent device commands |
 | `-b 32` | Bit depth for subsequent device commands |
 | `-f /dev/null` | Backend device for both playback and recording. `/dev/null` is magic: pure virtual routing, no real hardware opened. Use `-P` / `-R` separately for asymmetric setups (e.g. playback-only Bluetooth). |
 | `-a 0` | Amplification: `log2_amp = 0` → gain = 2⁰ = 1 (unity). Set explicitly before each device; the default is undocumented. Non-zero values modify audio and break bit-accuracy. |
@@ -577,7 +577,7 @@ hardware:
 ```sh
 virtual_oss \
   -C 2 -c 2 \
-  -r 44100 \
+  -r 192000 \
   -b 32 \
   -f /dev/null \
   -a 0 -d dsp.play \
@@ -615,7 +615,7 @@ Add an entry to `/etc/rc.conf`:
 
 ```sh
 virtual_oss_enable="YES"
-virtual_oss_flags="-C 2 -c 2 -r 44100 -b 32 -f /dev/null -a 0 -d dsp.play -a 0 -l dsp.loop"
+virtual_oss_flags="-C 2 -c 2 -r 192000 -b 32 -f /dev/null -a 0 -d dsp.play -a 0 -l dsp.loop"
 ```
 
 Then enable and start the service:

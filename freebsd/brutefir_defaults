@@ -2,9 +2,10 @@
 ## Copy to ~/.brutefir_defaults  (or $XDG_CONFIG_HOME/BruteFIR/brutefir_defaults.conf)
 
 float_bits: 32;             # internal floating-point precision (32 or 64)
-sampling_rate: 44100;       # Hz — must match the OSS device rate
+sampling_rate: 192000;      # Hz — must match the OSS device rate AND the
+                            # sample rate the FIR filter files were designed at
 filter_length: 65536;       # FIR length in samples (power of 2)
-                            # 65536 / 44100 ≈ 1.49 s of filter; reduce to
+                            # 65536 / 192000 ≈ 0.34 s of filter; reduce to
                             # 4096 or 8192 for low-latency testing
 overflow_warnings: true;    # print to stderr when clipping occurs
 show_progress: true;        # print block counter to stderr
