@@ -520,8 +520,15 @@ daemon.
 pkg install virtual_oss
 ```
 
-`virtual_oss` requires the `cuse` kernel module. To load it
-automatically at boot, add to `/boot/loader.conf`:
+`virtual_oss` requires the `cuse` kernel module. `cuse` (Character
+device in Userspace) is a FreeBSD kernel module that lets a userspace
+program create and serve `/dev/*` character device entries — the same
+mechanism FUSE uses for filesystems, applied to devices. `virtual_oss`
+uses it to publish `/dev/dsp.play` and `/dev/dsp.loop` as real device
+nodes that any application can open with ordinary POSIX calls, while
+the actual audio routing happens entirely in the `virtual_oss` process.
+
+To load `cuse` automatically at boot, add to `/boot/loader.conf`:
 
 ```
 cuse_load="YES"
@@ -539,16 +546,17 @@ virtual_oss \
   -r 44100 \
   -b 32 \
   -f /dev/null \
-  -d dsp.play \
-  -l dsp.loop &
+  -a 0 -d dsp.play \
+  -a 0 -l dsp.loop &
 ```
 
 | Flag | Meaning |
 |------|---------|
 | `-C 2 -c 2` | 2 output / 2 input channels |
-| `-r 44100` | Sample rate |
-| `-b 32` | Bit depth |
+| `-r 44100` | Sample rate for subsequent device commands |
+| `-b 32` | Bit depth for subsequent device commands |
 | `-f /dev/null` | Backend device for both playback and recording. `/dev/null` is magic: pure virtual routing, no real hardware opened. Use `-P` / `-R` separately for asymmetric setups (e.g. playback-only Bluetooth). |
+| `-a 0` | Amplification: `log2_amp = 0` → gain = 2⁰ = 1 (unity). Set explicitly before each device; the default is undocumented. Non-zero values modify audio and break bit-accuracy. |
 | `-d dsp.play` | Create `/dev/dsp.play` (playback side) |
 | `-l dsp.loop` | Create `/dev/dsp.loop` (loopback capture side) |
 
@@ -572,8 +580,8 @@ virtual_oss \
   -r 44100 \
   -b 32 \
   -f /dev/null \
-  -d dsp.play \
-  -l dsp.loop &
+  -a 0 -d dsp.play \
+  -a 0 -l dsp.loop &
 ```
 
 Then edit `brutefir.conf` to read from the loopback capture device and
@@ -607,7 +615,7 @@ Add an entry to `/etc/rc.conf`:
 
 ```sh
 virtual_oss_enable="YES"
-virtual_oss_flags="-C 2 -c 2 -r 44100 -b 32 -f /dev/null -d dsp.play -l dsp.loop"
+virtual_oss_flags="-C 2 -c 2 -r 44100 -b 32 -f /dev/null -a 0 -d dsp.play -a 0 -l dsp.loop"
 ```
 
 Then enable and start the service:
@@ -644,6 +652,19 @@ appear alongside the real `/dev/dsp0`.
   and does not interfere with other applications accessing the real
   soundcard. The service can safely run at boot and stay running when
   BruteFIR is stopped; other players can still use `/dev/dsp0` directly.
+- **Bit-accurate routing**: `virtual_oss` is a software mixer and can
+  modify audio in several ways. To keep the signal intact between player
+  and BruteFIR:
+  - `-a 0` before each device (unity gain, shown above). The
+    amplification default is not documented; always set it explicitly.
+  - Never add `-x` or `-g` (output/input compressors). They
+    dynamically attenuate loud samples and are off by default, but
+    adding them for any reason destroys bit accuracy.
+  - Never add `-p 1` (polarity inversion; default is 0, normal).
+  - Keep `-S` absent (no resampling, as covered above).
+- **Real-time priority**: add `-i <priority>` (e.g. `-i 8`) to reduce
+  the risk of buffer underruns under system load. This does not affect
+  audio data, only scheduling reliability.
 - If you use a JACK backend instead of OSS, `virtual_oss` is not needed:
   connect BruteFIR's JACK ports directly in `qjackctl` or via
   `jack_connect`.
