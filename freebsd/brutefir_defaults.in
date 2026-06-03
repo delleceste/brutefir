@@ -23,7 +23,7 @@ modules_path: "@BRUTEFIR_MODULES_DIR@";
 
 # Location of the main configuration file.  MANDATORY — only settable here,
 # not in brutefir.conf.  Adjust the path to match your setup.
-config_file: "$XDG_CONFIG_HOME/BruteFIR/brutefir.conf";
+config_file: "$XDG_CONFIG_HOME/BruteFIR/brutefir_passthrough.conf";
 convolver_config: "$XDG_CONFIG_HOME/BruteFIR/brutefir_convolver";
 
 ## COEFF DEFAULTS ##
