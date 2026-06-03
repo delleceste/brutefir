@@ -8,6 +8,12 @@
  *   - #include "defs.h" removed (file no longer exists); replaced with
  *     <stdbool.h> and <stdint.h>
  *   - bool_t replaced with bool throughout
+ *   - SNDCTL_DSP_SETFRAGMENT fragment size restored to log2 encoding (the
+ *     restore had passed the raw byte count, which the OSS API misreads).
+ *   - device_period_size now returned in frames, not bytes: the v1.1.0
+ *     threaded rewrite changed this contract (dai.c multiplies the value by
+ *     channels * sample size, matching the ALSA module which returns frames).
+ *   - dropped now-unused includes (bit.h, inout.h).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,11 +27,9 @@
 #include <sys/soundcard.h>
 
 #include "log2.h"
-#include "bit.h"
 #include "emalloc.h"
 #define IS_BFIO_MODULE
 #include "bfmod.h"
-#include "inout.h"
 
 #define ERRORSIZE 1024
 
@@ -57,11 +61,19 @@ set_params(int fd,
 	   int *hardware_period_size,
 	   char errstr[])
 {
-    int format, n;
+    int format, n, frame_bytes, lg;
 
-    /* Set the fragment size */
-    n = period_size * open_channels * bf_sampleformat_size(sample_format);
-    n = (0x7FFF << 16) | n;
+    /* Set the fragment size.  The low 16 bits of the SNDCTL_DSP_SETFRAGMENT
+       argument encode the fragment size as a power of two (log2 of the size in
+       bytes), not the byte count itself; the high 16 bits are the maximum
+       number of fragments. */
+    frame_bytes = open_channels * bf_sampleformat_size(sample_format);
+    if ((lg = log2_get((uint32_t)(period_size * frame_bytes))) == -1) {
+        sprintf(errstr, "  Period size (%d bytes) is not a power of two.\n",
+                period_size * frame_bytes);
+        return false;
+    }
+    n = (0x7FFF << 16) | lg;
     /* we check the actual result later (n does not get the true value) */
     if (ioctl(fd, SNDCTL_DSP_SETFRAGMENT, &n) == -1) {
         sprintf(errstr, "  Could not set fragment size: %s.\n",
@@ -142,13 +154,16 @@ set_params(int fd,
         return false;
     }
 
-    /* Get the fragment size */
+    /* Get the fragment size.  SNDCTL_DSP_GETBLKSIZE reports it in bytes, but
+       the framework expects the device period size in frames (samples per
+       channel) — see dai.c, which multiplies this value back up by
+       open_channels * sample size.  Convert here. */
     if (ioctl(fd, SNDCTL_DSP_GETBLKSIZE, &n) == -1) {
         sprintf(errstr, "  Could not get fragment size: %s.\n",
                 strerror(errno));
         return false;
     }
-    *hardware_period_size = n;
+    *hardware_period_size = n / frame_bytes;
 
     return true;
 }
