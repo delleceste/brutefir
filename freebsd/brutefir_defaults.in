@@ -69,11 +69,3 @@ output {
 	# (High-Pass Triangular Probability Density Function) dither.
 	dither: false;
 };
-
-## FILTER DEFAULTS ##
-
-filter {
-	process: -1;        # process index to run in (-1 = auto)
-	delay: 0;           # predelay in blocks
-	crossfade: false;   # crossfade when coefficient is changed
-};
