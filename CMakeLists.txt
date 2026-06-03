@@ -302,6 +302,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     # Sample configs
     install(FILES
             freebsd/brutefir.conf
+            freebsd/brutefir_passthrough.conf
             ${CMAKE_CURRENT_BINARY_DIR}/brutefir_defaults
         DESTINATION ${CMAKE_INSTALL_DATADIR}/brutefir
     )
