@@ -21,9 +21,10 @@ safety_limit: 6;            # abort if output exceeds this many dB (0 = off)
 # Use an absolute path for daemon / rc.d use.
 modules_path: "@BRUTEFIR_MODULES_DIR@";
 
-# Location of the main configuration and convolver files — adjust to your setup.
-#config_file: "~/digital-room-correction/brutefir.conf";
-#convolver_config: "~/digital-room-correction/brutefir_convolver";
+# Location of the main configuration file.  MANDATORY — only settable here,
+# not in brutefir.conf.  Adjust the path to match your setup.
+config_file: "$XDG_CONFIG_HOME/BruteFIR/brutefir.conf";
+#convolver_config: "$XDG_CONFIG_HOME/BruteFIR/brutefir_convolver";
 
 ## COEFF DEFAULTS ##
 
