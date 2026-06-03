@@ -142,7 +142,7 @@ _args="${_args} -C ${brutefir_loopback_channels} -c ${brutefir_loopback_channels
 _args="${_args} -r ${brutefir_loopback_rate} -b ${brutefir_loopback_bits} -s ${brutefir_loopback_buf}"
 _args="${_args} -f /dev/null"
 _args="${_args} -a 0 -d ${brutefir_loopback_play}"
-_args="${_args} -a 0 -l ${brutefir_loopback_loop}"
+_args="${_args} -a 0 -L ${brutefir_loopback_loop}"
 [ -n "${brutefir_loopback_ctl}" ] && _args="${_args} -t ${brutefir_loopback_ctl}"
 [ -n "${brutefir_loopback_extra_args}" ] && _args="${_args} ${brutefir_loopback_extra_args}"
 
